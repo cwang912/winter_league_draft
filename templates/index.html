@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+<!-- {{ form.hidden_tag() }} -->
+{% block body %}
+<!-- <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Project name</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#">Settings</a></li>
+            <li><a href="#">Profile</a></li>
+            <li><a href="#">Help</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav> -->
+<head>
+<style>
+
+.hideme {
+    display: none;
+}
+</style>
+</head>
+
+<script type=text/javascript>
+  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-3 main">
+      <h3 class="page-header">Current pick(s)</h3>
+      {% if pick %}
+      <table class="table table-striped">
+      <tr>
+        <td>{{ players.loc[pick]['name'] }}</a></td>
+        <td>{{ players.loc[pick]['rating'] }}</td>
+        <td>{{ players.loc[pick]['gender'] }}</td>
+
+        <td>{{ wtf.quick_form(form, form_type="basic") }}</td>
+        <!-- <input type="submit" value='Draft Player(s)' name="Draft player"></td> -->
+      </tr>
+      {% if not players.loc[pick]['baggage'] == ' '%}
+      <tr>
+        <td>{{ players.loc[players['name']==players.loc[pick]['baggage']]['name'].values[0] }}</a></td>
+        <td>{{ players.loc[players['name']==players.loc[pick]['baggage']].rating.values[0] }}</td>
+        <td>{{ players.loc[players['name']==players.loc[pick]['baggage']].gender.values[0] }}</td>
+        <td></td>
+      </tr>
+      {% endif %}
+      <!-- <td>{{ players.iloc[pick]['baggage'] }}</td> -->
+    </table>
+    {% endif %}
+    </div>
+
+  </div>
+  <div class="row">
+
+    <div class="col-sm-2 col-md-4 main">
+      <h3 class="page-header">Players</h3>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rating</th>
+              <th>Gender</th>
+              <th>Baggage</th>
+              <!-- <th></th> -->
+            </tr>
+          </thead>
+          <tbody>
+            {% for player in players[players.team.isnull()].index %}
+            <tr>
+              <td><a href="{{player}}">{{ players.loc[player]['name'] }}</a></td>
+              <td>{{ players.loc[player]['rating'] }}</td>
+              <td>{{ players.loc[player]['gender'] }}</td>
+              <td>{{ players.loc[player]['baggage'] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="col-sm-2 col-md-4 main">
+      <h3 class="page-header">Drafting Team</h3>
+      <h4 class="page-header">Males</h4>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rating</th>
+              <th>Gender</th>
+
+              <!-- <th></th> -->
+            </tr>
+          </thead>
+          <tbody>
+            {% for player in drafting_team %}
+            {% if drafting_team[player]['gender'] == 'M' %}
+            <tr>
+              <td>{{ drafting_team[player]['name'] }}</td>
+              <td>{{ drafting_team[player]['rating'] }}</td>
+              <td>{{ drafting_team[player]['gender'] }}</td>
+
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <h4 class="page-header">Females</h4>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rating</th>
+              <th>Gender</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for player in drafting_team %}
+            {% if drafting_team[player]['gender'] == 'F' %}
+            <tr>
+              <td>{{ drafting_team[player]['name'] }}</td>
+              <td>{{ drafting_team[player]['rating'] }}</td>
+              <td>{{ drafting_team[player]['gender'] }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="col-sm-2 col-md-4 main">
+      <h3 class="page-header">Team</h3>
+      <!-- <form method="post" class="form" role="form">
+
+
+      </form> -->
+
+     <!-- {{ wtf.quick_form(teams_menu, form_type="basic") }} -->
+     <div>
+     <form action="/create_post/" method="POST" class="form" id="post-form">
+       <div class="form-group "><label class="control-label" for="select_team">Select team</label>
+       <select class="form-control" id="select_team" name="select_team"><option selected value="1">Richard Stacklin</option><option value="2">Amir Kaghazwala, Dutch</option><option value="3">Jacob Lunn, Dan Young</option><option value="4">Matt Woods, John Marotta</option><option value="5">Dani Runzo, Sophia Knowles</option><option value="6">Libby Lehman, Kumi</option><option value="7">Pinecone, Nick Mathison</option><option value="8">Eric Zarobila, Joe Mama</option></select>
+       </div>
+       <script src="static/scripts/main.js"></script>
+     </form>
+   </div>
+
+      <h4 class="page-header">Males</h4>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rating</th>
+              <th>Gender</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for team in all_teams %}
+            {% set outer_loop = loop.index %}
+            {% for player in all_teams[team].roster %}
+            {% if all_teams[team].roster[player]['gender'] == 'M' %}
+            <tr class="hideme team{{outer_loop}}">
+              <td>{{ all_teams[team].roster[player]['name'] }}</td>
+              <td>{{ all_teams[team].roster[player]['rating'] }}</td>
+              <td>{{ all_teams[team].roster[player]['gender'] }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <h4 class="page-header">Females</h4>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rating</th>
+              <th>Gender</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for team in all_teams %}
+              {% set outer_loop = loop.index %}
+              {% for player in all_teams[team].roster %}
+              {% if all_teams[team].roster[player]['gender'] == 'F' %}
+            <tr class="hideme team{{outer_loop}}">
+                <td>{{ all_teams[team].roster[player]['name'] }}</td>
+                <td>{{ all_teams[team].roster[player]['rating'] }}</td>
+                <td>{{ all_teams[team].roster[player]['gender'] }}</td>
+              </tr>
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+{% endblock %}
