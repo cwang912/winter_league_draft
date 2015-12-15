@@ -5,7 +5,7 @@ import pandas as pd
 from flask.ext.bootstrap import Bootstrap
 # from flask.ext.moment import Moment
 from flask.ext.wtf import Form
-from wtforms import StringField, SubmitField, SelectField
+from wtforms import StringField, SubmitField, SelectField, RadioField, HiddenField
 from wtforms.validators import Required, Optional
 
 app = Flask('density_graph_webapp')
@@ -25,18 +25,25 @@ class Team():
         self.mens_total = 0
         self.womens_total = 0
         self.total = 0
+        self.number_people = 0
+        self.number_female = 0
+        self.number_male = 0
+
         team_name = ''
         for cap in self.captains:
-            team_name += self.captains[cap]['name']
+            team_name += self.captains[cap]['name'].split()[0]
             team_name += ', '
         self.team_name = team_name[:-2]
 
         for cap in self.roster:
             if self.roster[cap]['gender'] == 'M':
+                self.number_male += 1
                 self.mens_total += self.roster[cap]['rating']
             else:
+                self.number_female += 1
                 self.womens_total += self.roster[cap]['rating']
             self.total += self.roster[cap]['rating']
+            self.number_people += 1
 
     def add(self, pid):
         if not players.loc[pid].baggage==' ':
@@ -49,23 +56,26 @@ class Team():
         for p in pick:
             players.loc[p,'team'] = self.number
             player = players.loc[p]
-            # print(player)
             self.roster[p] = dict(player)
-            # print(player)
-            # print(type(player))
             if player.gender == 'M':
+                self.number_male += 1
                 self.mens_total += player['rating']
             else:
+                self.number_female += 1
                 self.womens_total += player['rating']
+            self.number_people += 1
             self.total += player['rating']
 
     def remove(self, pick):
         for player in pick:
             self.roster.remove(player)
             if pick[player]['gender'] == 'M':
+                self.number_male += -1
                 self.mens_total += -pick[player]['rating']
             else:
+                self.number_female += -1
                 self.womens_total += -pick[player]['rating']
+            self.number_people += -1
             self.total += -pick[player]['rating']
     def print_roster(self):
         for i in self.roster:
@@ -73,7 +83,20 @@ class Team():
     def print_team(self):
         print(self.number,self.total)
 
-def next_pick(logic='pre'):
+def get_logic(teams):
+    all_picks = 0
+    for i in teams:
+        all_picks += teams[i].number_people
+    if all_picks < 4*len(teams):
+        return "pre"
+    womens = False
+    for i in teams:
+        if teams[i].number_female < 4:
+            return "womens"
+    return "mens"
+
+def next_pick(teams):
+    logic = get_logic(teams)
     m = teams[1].total
     n = 1
     if logic == 'pre':
@@ -100,97 +123,129 @@ for ind in range(1,9):
 
 class NameForm(Form):
     # name = StringField('Pick a place in the US:', validators=[Required()])
-    submit = SubmitField('Submit')
-
-
-class TeamDropdown(Form):
-    # name = StringField('Pick a place in the US:', validators=[Required()])
-    team_names = []
-    for i in teams:
-        team_names.append(teams[i].team_name)
+    submit = SubmitField('Draft!')
+    team_names = [teams[i].team_name for i in teams]
     team_choices = zip(range(1,9),team_names)
-    # team_choices =
-    select_team = SelectField('Select team', choices=team_choices, validators=[Optional()])
-    submit = SubmitField('Submit')
+    select_team = SelectField('For which team?', choices=team_choices, coerce=int, default=(next_pick(teams)))
+    player_choices = zip(players[players.team.isnull()].index,players[players.team.isnull()]['name'])
+    select_player = RadioField('Which player', choices=player_choices, coerce=int)
+    player = HiddenField()
 
-pick = None
+# class TeamDropdown(Form):
+#     # name = StringField('Pick a place in the US:', validators=[Required()])
+#     team_names = []
+#     for i in teams:
+#         team_names.append(teams[i].team_name)
+#     team_choices = zip(range(1,9),team_names)
+#     # team_choices =
+#     select_team = SelectField('Select team', choices=team_choices, validators=[Optional()])
+#     submit = SubmitField('Submit')
+
+# pick = None
 tid = 1
-for i in (teams[tid].roster):
-    print(teams[tid].roster[i])
+# for i in (teams[tid].roster):
+#     print(teams[tid].roster[i])
 # print(teams[tid].roster)
+# next_pick = None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    name = None
     form = NameForm()
-    team_selection = TeamDropdown()
-    team_selection.select_team.default=1
-    team_selection.process()
-    print(teams)
-    if team_selection.is_submitted():
-        # print(team_selection.data)
-        # team_selection.select_team(default=team_selection.data['select_team'])
-        team_selection
-        print('something')
-        print(team_selection.data['select_team'])
-        print(team_selection.select_team)
-        team_selection= TeamDropdown()
-        # display_team = team_selection.data['select_team']
-        # team_selection = TeamDropdown()
-        return render_template('index.html', players=players, pick=pick, team=teams[next_pick('pre')].roster,form=form,teams_menu=team_selection)
+    # print('here1')
+    # team_selection = TeamDropdown()
+    # team_selection.select_team.default=1
+    # team_selection.process()
+    if form.validate_on_submit():
+        # print(next_pick)
+        print('yes')
+        print(form.select_player.data)
+
+    if request.args.get('pick_no'):
+        pick_no = int(request.args.get('pick_no'))
+        # next_pick = pick_no
+    else:
+        pick_no = None
+
+
+    # print(team_selection)
+    # if team_selection.is_submitted():
+    #     # print(team_selection.data)
+    #
+    #     return render_template('index.html', players=players, pick=pick, drafting_team=teams,form=form,teams_menu=team_selection, current_team=next_pick('pre'))
 
         # form.name.data = ''
-    print('tid')
-    print(tid)
-    return render_template('index.html', players=players, pick=pick,    drafting_team=teams[next_pick('pre')].roster,form=form,teams_menu=team_selection,all_teams=teams)
-#
-# @app.route('/team/<int:tid>', methods=['GET', 'POST'])
-# def tid(tid=1):
-#     name = None
-#     form = NameForm()
-#     team_selection = TeamDropdown()
-#     team_selection.select_team(default=tid)
-#     print(tid)
-#     if form.validate_on_submit():
-#         teams[next_pick('pre')].add(pid)
-#         # form.name.data = ''
-#         pid = None
-#     return render_template('index.html', players=players, pick=pid, drafting_team=teams[next_pick('pre')].roster,form=form,teams_menu=team_selection, next_team=teams[tid].roster)
-
+    # print('tid')
+    # print(tid)
+    return render_template('index.html', players=players, pick=pick_no, logic=get_logic(teams),form=form,all_teams=teams, current_team=next_pick(teams))
 
 @app.route('/<int:pid>', methods=['GET', 'POST'])
-def pid(pid=None):
-    name = None
+def highlight_pid(pid=None):
+    class NameForm2(Form):
+        # name = StringField('Pick a place in the US:', validators=[Required()])
+        submit = SubmitField('Draft!')
+        team_names = [teams[i].team_name for i in teams]
+        team_choices = zip(range(1,9),team_names)
+        select_team = SelectField('For which team?', choices=team_choices, coerce=int, default=(next_pick(teams)))
+        player_choices = zip(players[players.team.isnull()].index,players[players.team.isnull()]['name'])
+        select_player = RadioField('Which player', choices=player_choices, coerce=int)
+        player = HiddenField()
+
+
+    form = NameForm2()
+    print(pid)
+    # team_selection = TeamDropdown()
+    # team_selection.select_team()
+    # print('here int')
+    # print(form)
+    # print(form.select_team.data)
+    # print(form.submit.data)
+    # if form.submit.data:
+    #     print('here2')
+    #     print(form.select_team.data)
+    #     teams[form.select_team.data].add(pid)
+    #     teams[form.select_team.data].print_roster()
+    #     pid = None
+    #
+    # if form.validate_on_submit():
+    #     print('here')
+    #     return redirect(url_for('draft'))
+        # teams[form.select_team].add(pid)
+        # teams[form.select_team].print_roster()
+        # return render_template('index.html', players=players, pick=pid, drafting_team=teams,form=form,all_teams=teams, current_team=next_pick('pre'))
+    # return redirect(url_for('index', pick_no=pid))
+    return render_template('index.html', players=players, pick=pid, logic=get_logic(teams),form=form,all_teams=teams, current_team=next_pick(teams))
+#
+@app.route('/draft', methods=('GET', 'POST'))
+def submit():
     form = NameForm()
-    team_selection = TeamDropdown()
-    team_selection.select_team(default=tid)
+    print('here')
+    print(int(form.select_team.data))
+    print(int(form.player.data))
 
-    if form.validate_on_submit():
-        teams[next_pick('pre')].add(pid)
-        teams[tid].print_roster()
-        pid = None
-    return render_template('index.html', players=players, pick=pid, drafting_team=teams[next_pick('pre')].roster,form=form,teams_menu=team_selection,all_teams=teams)
+    teams[int(form.select_team.data)].add(int(form.player.data))
+    teams[int(form.select_team.data)].print_roster()
+        # pid = None
+    return render_template('index.html', players=players, pick=None, logic=get_logic(teams),form=form,all_teams=teams, current_team=next_pick(teams))
 
-
-@app.route('/get_team')
-def get_team():
-    name = None
-    form = NameForm()
-    team_selection = TeamDropdown()
-    team_selection.select_team.default=1
-    team_selection.process()
-
-    tid = int(request.args.get('selected_team'))
-    teams[tid].print_roster()
-    print(tid)
-    return render_template('index.html', players=players, pick=pid, drafting_team=teams[next_pick('pre')].roster,form=form,teams_menu=team_selection, next_team=teams[tid].roster)
+#
+# @app.route('/get_team')
+# def get_team():
+#     form = NameForm()
+#     team_selection = TeamDropdown()
+#     team_selection.select_team.default=1
+#     team_selection.process()
+#
+#     tid = int(request.args.get('selected_team'))
+#     teams[tid].print_roster()
+#     # print(tid)
+#     return render_template('index.html', players=players, pick=pid,    drafting_team=teams,form=form,teams_menu=team_selection,all_teams=teams, current_team=next_pick('pre'))
     # return jsonify(tid=tid)
 
     # return app.root_path
 # # FLASK FUNCTIONS
 # @app.route('/graph/<place>', methods=['GET', 'POST'])
 # def graph(place=None):
-#     name = None
+#
 #     form = NameForm()
 #     if form.validate_on_submit():
 #         name = form.name.data
@@ -209,6 +264,20 @@ def get_team():
 #     # data = f.read()
 #     return send_file(f, mimetype='image/png')
 #
+#
+# @app.route('/team/<int:tid>', methods=['GET', 'POST'])
+# def tid(tid=1):
+#
+#     form = NameForm()
+#     team_selection = TeamDropdown()
+#     team_selection.select_team(default=tid)
+#     print(tid)
+#     if form.validate_on_submit():
+#         teams[next_pick('pre')].add(pid)
+#         # form.name.data = ''
+#         pid = None
+#     return render_template('index.html', players=players, pick=pid, drafting_team=teams[next_pick('pre')].roster,form=form,teams_menu=team_selection, next_team=teams[tid].roster)
+
 
 if __name__ == '__main__':
   app.run(debug=True)

@@ -8,23 +8,48 @@
 //    });
 // });
 
-$('.hideme').hide();
+//
+// $(document).ready(function() {
+//     $('#avail-players').DataTable({
+//       "paging":   false,
+//       "aaSorting": [1,'desc']
+//     });
+//     $('#draft-order').DataTable({
+//       "paging":   false,
+//       'searching': false,
+//       'info': false
+//       {{ '{% if logic == "pre" %}' }}
+//         ,"aaSorting": [1,'desc']
+//       {{ '{% endif %}' }}
+//     });
+//   }
+// );
 
-// Submit post on submit
-$(function() {
-  var submit_form = function(e) {
-      selected_team = $('select[name=select_team]').val();
-      // var x1 = '#awer'
-      // var x2 = 10.toString()
-      // console.log(concat('#awer',10.toString()));
-      // $('.team2').hide()
-      $('.hideme').hide();
-      $('.team'+selected_team).show();
-    // });
-    // return false;
-  };
-  $('#post-form').on('change', submit_form);
-});
+// $(document).ready(function()
+//     {
+//         $("#avail-players").tablesorter();
+//         console.log('yes')
+//     }
+// );
+
+// $('.hideme').hide();
+//
+// // Submit post on submit
+// $(function() {
+//   var submit_form = function(e) {
+//       selected_team = $('select[name=select_team]').val();
+//       // var x1 = '#awer'
+//       // var x2 = 10.toString()
+//       // console.log(concat('#awer',10.toString()));
+//       // $('.team2').hide()
+//       $('.hideme').hide();
+//       $('.team'+selected_team).show();
+//       console.log(selected_team);
+//     // });
+//     // return false;
+//   };
+//   $('#post-form').on('change', submit_form);
+// });
 
 // showOne(1);​
 // $(function() {
