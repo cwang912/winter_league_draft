@@ -1,9 +1,7 @@
 from flask import Flask, render_template, make_response, send_file, redirect, url_for, request, jsonify
 import numpy as np
 import pandas as pd
-# from flask.ext.script import Manager
 from flask.ext.bootstrap import Bootstrap
-# from flask.ext.moment import Moment
 from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField, SelectField, RadioField, HiddenField
 from wtforms.validators import Required, Optional
@@ -76,8 +74,6 @@ class Team():
             self.total += player['rating']
 
     def remove_pick(self, pick):
-        # print self.roster
-        # print (self.roster.keys())
         for p in pick:
             players.loc[p,'team'] = np.nan
             player = players.loc[p]
@@ -138,12 +134,10 @@ for ind in range(1,9):
 
 tid = 1
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
+@app.route('/winter-league', methods=['GET', 'POST'])
+def winter_league():
     class NameForm(Form):
-        # name = StringField('Pick a place in the US:', validators=[Required()])
         submit = SubmitField('Draft!')
-
         team_names = [teams[i].team_name for i in teams]
         team_choices = zip(range(1,9),team_names)
         select_team = SelectField('For which team?', choices=team_choices, coerce=int, default=(next_pick(teams)))
@@ -165,24 +159,8 @@ def index():
     else:
         pick_no = None
 
-    return render_template('index.html', players=players, pick=pick_no, logic=get_logic(teams),form=form,undo_form=undo_form, all_teams=teams, current_team=next_pick(teams))
+    return render_template('draft.html', players=players, pick=pick_no, logic=get_logic(teams),form=form,undo_form=undo_form, all_teams=teams, current_team=next_pick(teams))
 
-# @app.route('/<int:pid>', methods=['GET', 'POST'])
-# def highlight_pid(pid=None):
-#     class NameForm2(Form):
-#         # name = StringField('Pick a place in the US:', validators=[Required()])
-#         submit = SubmitField('Draft!')
-#         team_names = [teams[i].team_name for i in teams]
-#         team_choices = zip(range(1,9),team_names)
-#         select_team = SelectField('For which team?', choices=team_choices, coerce=int, default=(next_pick(teams)))
-#         player_choices = zip(players[players.team.isnull()].index,players[players.team.isnull()]['name'])
-#         select_player = RadioField('Which player', choices=player_choices, coerce=int)
-#         player = HiddenField()
-#
-#     form = NameForm2()
-#     print(pid)
-#     return render_template('index.html', players=players, pick=pid, logic=get_logic(teams),form=form,all_teams=teams, current_team=next_pick(teams))
-#
 @app.route('/draft', methods=('GET', 'POST'))
 def submit():
     print(teams[next_pick(teams)].team_name)
@@ -192,19 +170,17 @@ def submit():
         team_names = [teams[i].team_name for i in teams]
         team_choices = zip(range(1,9),team_names)
         select_team = SelectField('For which team?', choices=team_choices, coerce=int, default=(next_pick(teams)))
-        # player_choices = zip(players[players.team.isnull()].index,players[players.team.isnull()]['name'])
-        # select_player = RadioField('Which player', choices=player_choices, coerce=int)
         player = HiddenField()
 
     form = NameForm2()
     print('here')
-    # print(form.player.data = 'None')
+
     if form.player.data != 'None':
         teams[int(form.select_team.data)].add(players[players.name==form.player.data].index[0])
         teams[int(form.select_team.data)].print_roster()
         picks_in_order.append(int(players[players.name==form.player.data].index[0]))
         team_picks.append(int(form.select_team.data))
-    return redirect(url_for('index'))
+    return redirect(url_for('winter_league'))
 
 
 @app.route('/undo', methods=('GET', 'POST'))
@@ -221,60 +197,7 @@ def undo():
     print(teams[last_team])
     teams[last_team].remove_pick(pick)
 
-    return redirect(url_for('index'))
-        # pid = None
-    # return render_template('index.html', players=players, pick=None, logic=get_logic(teams),form=form,all_teams=teams, current_team=next_pick(teams))
-
-#
-# @app.route('/get_team')
-# def get_team():
-#     form = NameForm()
-#     team_selection = TeamDropdown()
-#     team_selection.select_team.default=1
-#     team_selection.process()
-#
-#     tid = int(request.args.get('selected_team'))
-#     teams[tid].print_roster()
-#     # print(tid)
-#     return render_template('index.html', players=players, pick=pid,    drafting_team=teams,form=form,teams_menu=team_selection,all_teams=teams, current_team=next_pick('pre'))
-    # return jsonify(tid=tid)
-
-    # return app.root_path
-# # FLASK FUNCTIONS
-# @app.route('/graph/<place>', methods=['GET', 'POST'])
-# def graph(place=None):
-#
-#     form = NameForm()
-#     if form.validate_on_submit():
-#         name = form.name.data
-#         return redirect(url_for('graph', place=name))
-#     return render_template("index.html", form=form, name=place)
-#
-# @app.route('/fig/<place>')
-# def fig(place):
-#     df = pd.read_csv('data/tracts.csv')
-#     line = plot_fun(place, df)
-#     # Generate the plot
-#     #f = cStringIO.StringIO()
-#     plt.savefig(f, format='png')
-#     # Serve up the data
-#     f.seek(0)
-#     # data = f.read()
-#     return send_file(f, mimetype='image/png')
-#
-#
-# @app.route('/team/<int:tid>', methods=['GET', 'POST'])
-# def tid(tid=1):
-#
-#     form = NameForm()
-#     team_selection = TeamDropdown()
-#     team_selection.select_team(default=tid)
-#     print(tid)
-#     if form.validate_on_submit():
-#         teams[next_pick('pre')].add(pid)
-#         # form.name.data = ''
-#         pid = None
-#     return render_template('index.html', players=players, pick=pid, drafting_team=teams[next_pick('pre')].roster,form=form,teams_menu=team_selection, next_team=teams[tid].roster)
+    return redirect(url_for('winter_league'))
 
 
 if __name__ == '__main__':
