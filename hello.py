@@ -17,6 +17,9 @@ players = pd.read_csv('PLAYERS.csv')
 players = players.sort_values('rating', ascending=False)
 players['baggage'] = players['baggage'].fillna(' ')
 
+picks_in_order = []
+team_picks = []
+
 class Team():
     def __init__(self, number, captains):
         self.number = number
@@ -28,6 +31,8 @@ class Team():
         self.number_people = 0
         self.number_female = 0
         self.number_male = 0
+        self.men = dict()
+        self.women = dict()
 
         team_name = ''
         for cap in self.captains:
@@ -37,9 +42,11 @@ class Team():
 
         for cap in self.roster:
             if self.roster[cap]['gender'] == 'M':
+                self.men[cap] = self.roster[cap]
                 self.number_male += 1
                 self.mens_total += self.roster[cap]['rating']
             else:
+                self.women[cap] = self.roster[cap]
                 self.number_female += 1
                 self.womens_total += self.roster[cap]['rating']
             self.total += self.roster[cap]['rating']
@@ -58,25 +65,34 @@ class Team():
             player = players.loc[p]
             self.roster[p] = dict(player)
             if player.gender == 'M':
+                self.men[p] = dict(player)
                 self.number_male += 1
                 self.mens_total += player['rating']
             else:
+                self.women[p] = dict(player)
                 self.number_female += 1
                 self.womens_total += player['rating']
             self.number_people += 1
             self.total += player['rating']
 
-    def remove(self, pick):
-        for player in pick:
-            self.roster.remove(player)
-            if pick[player]['gender'] == 'M':
+    def remove_pick(self, pick):
+        # print self.roster
+        # print (self.roster.keys())
+        for p in pick:
+            players.loc[p,'team'] = np.nan
+            player = players.loc[p]
+            self.roster.pop(p)
+            if player['gender'] == 'M':
+                self.men.pop(p)
                 self.number_male += -1
-                self.mens_total += -pick[player]['rating']
+                self.mens_total += -player['rating']
             else:
+                self.women.pop(p)
                 self.number_female += -1
-                self.womens_total += -pick[player]['rating']
+                self.womens_total += -player['rating']
             self.number_people += -1
-            self.total += -pick[player]['rating']
+            self.total += -player['rating']
+
     def print_roster(self):
         for i in self.roster:
             print(self.roster[i]['name'])
@@ -120,112 +136,94 @@ teams = dict()
 for ind in range(1,9):
     teams[ind] = Team(ind,players[players.team==ind])
 
-
-class NameForm(Form):
-    # name = StringField('Pick a place in the US:', validators=[Required()])
-    submit = SubmitField('Draft!')
-    team_names = [teams[i].team_name for i in teams]
-    team_choices = zip(range(1,9),team_names)
-    select_team = SelectField('For which team?', choices=team_choices, coerce=int, default=(next_pick(teams)))
-    player_choices = zip(players[players.team.isnull()].index,players[players.team.isnull()]['name'])
-    select_player = RadioField('Which player', choices=player_choices, coerce=int)
-    player = HiddenField()
-
-# class TeamDropdown(Form):
-#     # name = StringField('Pick a place in the US:', validators=[Required()])
-#     team_names = []
-#     for i in teams:
-#         team_names.append(teams[i].team_name)
-#     team_choices = zip(range(1,9),team_names)
-#     # team_choices =
-#     select_team = SelectField('Select team', choices=team_choices, validators=[Optional()])
-#     submit = SubmitField('Submit')
-
-# pick = None
 tid = 1
-# for i in (teams[tid].roster):
-#     print(teams[tid].roster[i])
-# print(teams[tid].roster)
-# next_pick = None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    form = NameForm()
-    # print('here1')
-    # team_selection = TeamDropdown()
-    # team_selection.select_team.default=1
-    # team_selection.process()
-    if form.validate_on_submit():
-        # print(next_pick)
-        print('yes')
-        print(form.select_player.data)
-
-    if request.args.get('pick_no'):
-        pick_no = int(request.args.get('pick_no'))
-        # next_pick = pick_no
-    else:
-        pick_no = None
-
-
-    # print(team_selection)
-    # if team_selection.is_submitted():
-    #     # print(team_selection.data)
-    #
-    #     return render_template('index.html', players=players, pick=pick, drafting_team=teams,form=form,teams_menu=team_selection, current_team=next_pick('pre'))
-
-        # form.name.data = ''
-    # print('tid')
-    # print(tid)
-    return render_template('index.html', players=players, pick=pick_no, logic=get_logic(teams),form=form,all_teams=teams, current_team=next_pick(teams))
-
-@app.route('/<int:pid>', methods=['GET', 'POST'])
-def highlight_pid(pid=None):
-    class NameForm2(Form):
+    class NameForm(Form):
         # name = StringField('Pick a place in the US:', validators=[Required()])
         submit = SubmitField('Draft!')
+
         team_names = [teams[i].team_name for i in teams]
         team_choices = zip(range(1,9),team_names)
         select_team = SelectField('For which team?', choices=team_choices, coerce=int, default=(next_pick(teams)))
         player_choices = zip(players[players.team.isnull()].index,players[players.team.isnull()]['name'])
         select_player = RadioField('Which player', choices=player_choices, coerce=int)
         player = HiddenField()
+    class UndoForm(Form):
+        undo = SubmitField('Undo last pick')
 
+    undo_form = UndoForm()
+    form = NameForm()
 
-    form = NameForm2()
-    print(pid)
-    # team_selection = TeamDropdown()
-    # team_selection.select_team()
-    # print('here int')
-    # print(form)
-    # print(form.select_team.data)
-    # print(form.submit.data)
-    # if form.submit.data:
-    #     print('here2')
-    #     print(form.select_team.data)
-    #     teams[form.select_team.data].add(pid)
-    #     teams[form.select_team.data].print_roster()
-    #     pid = None
-    #
-    # if form.validate_on_submit():
-    #     print('here')
-    #     return redirect(url_for('draft'))
-        # teams[form.select_team].add(pid)
-        # teams[form.select_team].print_roster()
-        # return render_template('index.html', players=players, pick=pid, drafting_team=teams,form=form,all_teams=teams, current_team=next_pick('pre'))
-    # return redirect(url_for('index', pick_no=pid))
-    return render_template('index.html', players=players, pick=pid, logic=get_logic(teams),form=form,all_teams=teams, current_team=next_pick(teams))
+    if form.validate_on_submit():
+        print('yes')
+        print(form.select_player.data)
+
+    if request.args.get('pick_no'):
+        pick_no = int(request.args.get('pick_no'))
+    else:
+        pick_no = None
+
+    return render_template('index.html', players=players, pick=pick_no, logic=get_logic(teams),form=form,undo_form=undo_form, all_teams=teams, current_team=next_pick(teams))
+
+# @app.route('/<int:pid>', methods=['GET', 'POST'])
+# def highlight_pid(pid=None):
+#     class NameForm2(Form):
+#         # name = StringField('Pick a place in the US:', validators=[Required()])
+#         submit = SubmitField('Draft!')
+#         team_names = [teams[i].team_name for i in teams]
+#         team_choices = zip(range(1,9),team_names)
+#         select_team = SelectField('For which team?', choices=team_choices, coerce=int, default=(next_pick(teams)))
+#         player_choices = zip(players[players.team.isnull()].index,players[players.team.isnull()]['name'])
+#         select_player = RadioField('Which player', choices=player_choices, coerce=int)
+#         player = HiddenField()
+#
+#     form = NameForm2()
+#     print(pid)
+#     return render_template('index.html', players=players, pick=pid, logic=get_logic(teams),form=form,all_teams=teams, current_team=next_pick(teams))
 #
 @app.route('/draft', methods=('GET', 'POST'))
 def submit():
-    form = NameForm()
-    print('here')
-    print(int(form.select_team.data))
-    print(int(form.player.data))
+    print(teams[next_pick(teams)].team_name)
+    class NameForm2(Form):
+        # name = StringField('Pick a place in the US:', validators=[Required()])
+        submit = SubmitField('Draft!')
+        team_names = [teams[i].team_name for i in teams]
+        team_choices = zip(range(1,9),team_names)
+        select_team = SelectField('For which team?', choices=team_choices, coerce=int, default=(next_pick(teams)))
+        # player_choices = zip(players[players.team.isnull()].index,players[players.team.isnull()]['name'])
+        # select_player = RadioField('Which player', choices=player_choices, coerce=int)
+        player = HiddenField()
 
-    teams[int(form.select_team.data)].add(int(form.player.data))
-    teams[int(form.select_team.data)].print_roster()
+    form = NameForm2()
+    print('here')
+    # print(form.player.data = 'None')
+    if form.player.data != 'None':
+        teams[int(form.select_team.data)].add(players[players.name==form.player.data].index[0])
+        teams[int(form.select_team.data)].print_roster()
+        picks_in_order.append(int(players[players.name==form.player.data].index[0]))
+        team_picks.append(int(form.select_team.data))
+    return redirect(url_for('index'))
+
+
+@app.route('/undo', methods=('GET', 'POST'))
+def undo():
+
+    last_pick = picks_in_order.pop()
+    last_team = team_picks.pop()
+    print(len(players.ix[last_pick].baggage))
+    if last_pick in players[players.baggage.isnull()].index:
+        pid2 = players[players.name==players.ix[last_pick].baggage].index.values[0]
+        pick = [last_pick, pid2]
+    else:
+        pick = [last_pick]
+    print(teams[last_team])
+    teams[last_team].remove_pick(pick)
+
+    return redirect(url_for('index'))
         # pid = None
-    return render_template('index.html', players=players, pick=None, logic=get_logic(teams),form=form,all_teams=teams, current_team=next_pick(teams))
+    # return render_template('index.html', players=players, pick=None, logic=get_logic(teams),form=form,all_teams=teams, current_team=next_pick(teams))
 
 #
 # @app.route('/get_team')
