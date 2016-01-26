@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+<!-- {{ form.hidden_tag() }} -->
+{% block body %}
+<!-- <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Project name</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#">Settings</a></li>
+            <li><a href="#">Profile</a></li>
+            <li><a href="#">Help</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav> -->
+<head>
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/s/dt/jqc-1.11.3,dt-1.10.10,fh-3.1.0/datatables.min.css"/>
+
+<style>
+
+.draft {
+  width: none;
+}
+
+.tablesorter>thead>tr>th {
+  padding: 1px 4px 1px 4px;
+}
+
+.col-sm-6 {
+  float: right;
+}
+
+.col-lg-1 {
+    width: 12.5%;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+body, option, .form-control {
+  font-size: 12px;
+}
+.drafting-team {
+  padding: -10px;
+}
+.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th, .table>tr>td {
+  padding: 1px 4px 1px 4px;
+}
+.hideme {
+    display: none;
+}
+
+.name>td{
+  width: 40px;
+}
+
+.rating>td{
+  width: 5px;
+}
+.gender>td{
+  width: 5px;
+}
+
+.table-head {
+}
+
+#male {
+  margin: 0px 0 0 0px;
+}
+
+/*table { border: none; border-collapse: collapse; }*/
+.table-teams table td:nth-child(3n+1) {
+  border-left: 1px solid #777;
+  padding-left: 5px;}
+.table-teams table td:last-child { border-right: 1px solid #777; }
+
+.table-teams table thead tr:first-child td { border: none; }
+/*.table-teams table tbody tr:last-child td { border: none; }*/
+/*.table-teams table td:first-child { border-left: none; }*/
+
+</style>
+
+
+
+<script src="https://cdn.datatables.net/s/dt/jqc-1.11.3,dt-1.10.10,fh-3.1.0/datatables.min.js"></script>
+<!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="//cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.10/js/dataTables.bootstrap.min.js"></script> -->
+
+<script type="text/javascript" src="/static/scripts/jquery.tablesorter.js"></script>
+</head>
+
+<script type=text/javascript>
+  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
+<script src="static/scripts/main.js"></script>
+<script>
+
+$(document).ready(function() {
+    var table = $('#avail-players').DataTable({
+      // "fixedHeader": {
+      //   'header': true
+      // },
+      "paging":   false,
+      "aaSorting": [1,'desc'],
+      'info': false
+    });
+
+    $('#avail-players tbody').on( 'click', 'tr', function () {
+      // console.log($(this).val());
+        if ( $(this).hasClass('selected') ) {
+            $(this).removeClass('selected');
+        }
+        else {
+            table.$('tr.selected').removeClass('selected');
+            $(this).addClass('selected');
+        }
+        document.getElementById("player").value = table.cell('.selected', 0).data();
+        // $('#player').hide();
+        console.log(document.getElementById("player").value);
+    } );
+
+    $('#draft-order').DataTable({
+      // "fixedHeader": {
+      //   'header': true
+      // },
+      "paging":   false,
+      'searching': false,
+      'info': false,
+
+      {% if logic == 'pre' %}
+        "aaSorting": [1,'asc']
+      {% endif %}
+      {% if logic == 'womens' %}
+        "aaSorting": [[2,'asc'],[1, 'asc']]
+      {% endif %}
+      {% if logic == 'mens' %}
+        "aaSorting": [[3,'asc'],[1,'asc']]
+      {% endif %}
+    });
+  }
+
+);
+</script>
+
+<div class="container-fluid">
+  <h1>2016 Cleveland Winter League Draft</h1>
+  <div class="row">
+
+  <div class="col-md-3 main">
+    <h4 class="page-header">Draft Order</h3>
+      <table id="draft-order" class="table table-striped">
+        <thead>
+          <tr>
+            <td><em>Name</em></td>
+            <td><em>T</em></td>
+            <td><em>W</em></td>
+            <td><em>M</em></td>
+          </tr>
+        </thead>
+        <tbody>
+          {% for team in all_teams %}
+          <tr>
+            <td>{{all_teams[team].team_name}}</td>
+            <td>{{all_teams[team].total}}</td>
+            <td>{{all_teams[team].womens_total}}</td>
+            <td>{{all_teams[team].mens_total}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </div>
+  <div class="col-md-4 main">
+    <h4 class="page-header">Available players</h4>
+    <div style="height:200px;" class="table-responsive">
+      <table id="avail-players" class="tablesorter table table-striped">
+        <thead>
+          <tr>
+              <th>Name</th>
+              <th></th>
+              <th></th>
+              <th>Baggage</th>
+              <th></th>
+              <th></th>
+          </tr>
+
+        </thead>
+        <tbody>
+          {% for player in players[players.team.isnull()].index %}
+          {% if logic != 'womens' %}
+              <tr>
+                <!-- <td><a id="{{player}}">{{ players.loc[player]['name'] }}</a></td> -->
+                <td>{{ players.loc[player]['name'] }}</td>
+                <td>{{ players.loc[player]['rating'] }}</td>
+                <td>{{ players.loc[player]['gender'] }}</td>
+                {% if players.loc[player]['baggage'] != ' ' %}
+                  <td>{{ players.loc[player]['baggage'] }}</td>
+                  <td>{{ players.loc[players.name==players.loc[player]['baggage']]['rating'].values[0] }}</td>
+                  <td>{{ players.loc[players.name==players.loc[player]['baggage']]['gender'].values[0] }}</td>
+                  {% else %}
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                {% endif %}
+              </tr>
+          {% endif %}
+
+          {% if logic == 'womens' %}
+            {% if players.loc[player]['gender'] == 'F' %}
+              <tr>
+                <!-- <td><a id="{{player}}">{{ players.loc[player]['name'] }}</a></td> -->
+                <td>{{ players.loc[player]['name'] }}</td>
+                <td>{{ players.loc[player]['rating'] }}</td>
+                <td>{{ players.loc[player]['gender'] }}</td>
+                {% if players.loc[player]['baggage'] != ' ' %}
+                  <td>{{ players.loc[player]['baggage'] }}</td>
+                  <td>{{ players.loc[players.name==players.loc[player]['baggage']]['rating'].values[0] }}</td>
+                  <td>{{ players.loc[players.name==players.loc[player]['baggage']]['gender'].values[0] }}</td>
+                  {% else %}
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                {% endif %}
+              </tr>
+            {% endif %}
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- <h4 class="page-header">Draft Order</h3>
+
+      <span id="timespan"></span>
+
+      <input type="button" value="Start" onclick="countdown()">
+      <input type="button" value="Reset" onclick="cdreset()"> -->
+  </div>
+
+  <div class="col-md-2 main">
+    <form class="form-group" method="POST" action="/draft">
+
+    <h4 class="page-header">Current pick(s)</h4>
+
+    <div class="row">
+      <div class="col-md-12 main">
+
+          {{ form.select_team.label }} {{ form.select_team(class_="form-control") }}
+
+        </br>
+              <!-- {% if pick %}
+        <table class="table table-striped">
+        <tr>
+          <td>{{ players.loc[pick]['name'] }}</td>
+          <td>{{ players.loc[pick]['rating'] }}</td>
+          <td>{{ players.loc[pick]['gender'] }}</td>
+        </tr>
+        {% if not players.loc[pick]['baggage'] == ' '%}
+        <tr>
+          <td>{{ players.loc[players['name']==players.loc[pick]['baggage']]['name'].values[0] }}</a></td>
+          <td>{{ players.loc[players['name']==players.loc[pick]['baggage']].rating.values[0] }}</td>
+          <td>{{ players.loc[players['name']==players.loc[pick]['baggage']].gender.values[0] }}</td>
+        </tr>
+        {% endif %}
+      </table>
+      {% endif %}
+        {% if pick %}
+
+        {% endif %} -->
+          <input class='draft-button' type="hidden" id="player" name="player" value=None>
+
+          {{ form.submit(class_="form-control") }}
+        </br>
+          <!-- <input type="hidden" id="player" name="player" value=None> -->
+
+
+      </form>
+      <form class="form-group" method="POST" action="/undo">
+        {{ undo_form.undo(class_="form-control") }}
+      </form>
+      </div>
+    </div>
+  </div>
+  <!-- <div class="col-md-2 main">
+    <h1>Cleveland Winter League Draft!</h1>
+  </div> -->
+</div>
+
+</div>
+<div class="row">
+
+  <!-- <div class="col-md-2 main">
+  </div> -->
+  <div class="col-md-12 main ">
+    <!-- <div class="row"> -->
+    <!-- <div class="col-lg-1 main drafting-team"> -->
+    <div class="table-responsive table-teams">
+
+        <table class="table table-striped ">
+          <thead>
+            <tr>
+              {% for team in all_teams %}
+              <td colspan="3"><h4 class="page-header table-head">{{all_teams[team].team_name}}</h4></td>
+              {% endfor %}
+            </tr>
+          </thead>
+
+          <tbody>
+            <!-- <tr>
+            <td> Females</td>
+            </tr> -->
+            {% for player in range(4) %}
+              <tr>
+              {% for team in all_teams %}
+                {% if player < all_teams[team].number_female %}
+                <td style="width: 8%">{{ all_teams[team].roster[all_teams[team].women.keys()[player]]['name'] }}</td>
+                <td style="width: 2.5%">{{ all_teams[team].roster[all_teams[team].women.keys()[player]]['rating'] }}</td>
+                <td style="width: 2%">{{ all_teams[team].roster[all_teams[team].women.keys()[player]]['gender'] }}</td>
+              {% else %}
+              <td style="width: 8%">–</td>
+              <td style="width: 2.5%">–</td>
+              <td style="width: 2%">–</td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+            <tr>
+              {% for i in range(8) %}
+              <td style="width: 8%"></br></td>
+              <td style="width: 2.5%"></br></td>
+              <td style="width: 2%"></br></td>
+              {% endfor %}
+            </tr>
+          {% for player in range(10) %}
+            <tr>
+            {% for team in all_teams %}
+              {% if player < all_teams[team].number_male %}
+                <td style="width: 8%">{{ all_teams[team].roster[all_teams[team].men.keys()[player]]['name'] }}</td>
+                <td style="width: 2.5%">{{ all_teams[team].roster[all_teams[team].men.keys()[player]]['rating'] }}</td>
+                <td style="width: 2%">{{ all_teams[team].roster[all_teams[team].men.keys()[player]]['gender'] }}</td>
+              {% else %}
+              <td style="width: 8%">–</td>
+              <td style="width: 2.5%">–</td>
+              <td style="width: 2%">–</td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tr>
+        </tbody>
+      </table>
+    <!-- </div> -->
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
