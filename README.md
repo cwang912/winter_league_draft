@@ -16,3 +16,8 @@ On the bottom, taking up the most space, are the team rosters.
 Most of this is built with Flask in Python, using HTML for the webpage, and a dose of jQuery for the sortable tables. Teams are stored in a class with functionality to add, subtract, or list team members, and with lots of probably inefficient pandas checks for names and player IDs. The page redirects to the same page after drafting, since the form submission is used to add players. It is likely possible to do this without having to reload a page, but not as it is currently built. Determining a more efficient way of transferring data from the user to the back-end logic would be great for me to work on and understand.
 
 Additionally, reloading the page will undo the draft picks, so be careful.
+
+
+## Deployment
+
+It is currently available on a Heroku instance, see https://winter-league-2016.herokuapp.com/winter-league
